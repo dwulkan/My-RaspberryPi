@@ -1,0 +1,257 @@
+#!/bin/bash -e
+
+# 20190419
+# Must compile from source
+# http://wiki.ros.org/melodic/Installation/Source
+
+# Script to save output to a text file for a post mortum.
+# Run:  rosinstall.sh step-name
+#                     STEP01 thru STEP14  <- for restarts
+#
+# 
+#
+step=$1
+#rosdir=~/ros
+rosdir=/opt/ros/melodic
+outfile=~/rosinstall.txt
+
+printf "******************************************************\n" 2>&1 | tee >>$outfile
+printf "******************************************************\n" 2>&1 | tee >>$outfile
+printf "******************************************************\n" 2>&1 | tee >>$outfile
+RIGHT_NOW=$(date +"%x %r %Z")
+echo "ROSINSTALL.sh BEGIN: $RIGHT_NOW \n"    2>&1 | tee >>$outfile
+
+
+if [ -z $step ]; then 
+   printf "NEED  A STEPNAME... $step \n"     2>&1 | tee >>$outfile
+   exit 1
+fi
+
+
+
+#-----------------------------------
+if [ "$step" == "step01" ]; then 
+    printf "$step \n"                        2>&1 | tee >>$outfile
+    printf "      1.1      Installing bootstrap dependencies\n"     2>&1 | tee >>$outfile
+    cd $rosdir
+    sudo apt-get install python-rosdep python-rosinstall-generator python-wstool python-rosinstall build-essential                   2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 01:  " $?           2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step02"
+fi
+#-----------------------------------
+if [ "$step" == "step02" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       1.2a      Initializing rosdep\n"    2>&1 | tee >>$outfile
+    cd $rosdir
+    sudo rosdep init                        2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 02:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step03"
+fi
+#-----------------------------------
+if [ "$step" == "step03" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       1.2b      rosdep update\n"  2>&1 | tee >>$outfile
+    cd $rosdir
+    rosdep update                           2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 03:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step04"
+fi
+#-----------------------------------
+if [ "$step" == "step04" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       2.1      Create a catkin Workspace\n"    2>&1 | tee >>$outfile
+    mkdir $rosdir/ros_catkin_ws             2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 04.1:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    cd $rosdir/ros_catkin_ws
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 04.2:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step05"
+fi
+#-----------------------------------
+if [ "$step" == "step05" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       Desktop Install (recommended):\n"   2>&1 | tee >>$outfile
+    cd $rosdir
+    rosinstall_generator desktop --rosdistro melodic --deps --tar > melodic-desktop.rosinstall   2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 05.1:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    printf "       Desktop Install (recommended):\n"   2>&1 | tee >>$outfile
+    cd $rosdir
+    wstool init -j8 src melodic-desktop.rosinstall     2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 05.2:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step06"
+fi
+#-----------------------------------
+if [ "$step" == "step06" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       Robot Install A of B\n"  2>&1 | tee >>$outfile
+    cd $rosdir
+    rosinstall_generator robot --rosdistro melodic --deps --tar > melodic-robot.rosinstall  2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 06.1:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    printf "       Robot Install B of B\n"  2>&1 | tee >>$outfile
+    cd $rosdir
+    wstool init -j8 src melodic-robot.rosinstall   2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 06.2:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step07"
+fi
+#-----------------------------------
+# This step takes the most time
+#https://stackoverflow.com/questions/53266574/installing-ros-melodic-on-ubuntu-18-10
+# Override the [os] distro, using bionic instead of cosmic:
+# rosdep install --from-paths src --ignore-src --os=ubuntu:bionic --rosdistro melodic -y
+if [ "$step" == "step07" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       2.1.1   Resolving Dependencies\n"  2>&1 | tee >>$outfile
+    cd $rosdir
+    sudo rosdep install --from-paths src --ignore-src --rosdistro melodic -y --os=ubuntu:bionic  2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 07:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step08"
+fi
+#-----------------------------------
+if [ "$step" == "step08" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       2.1.2a   Building the Local catkin Workspace\n" 2>&1 | tee >>$outfile
+    if [ ! -d "~/rosdir" ]; then
+       mkdir ~/rosdir
+    fi
+    cd ~/rosdir
+    $rosdir/src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release 2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 08.1:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    printf "       2.1.2b   Building the Public catkin Workspace\n"2>&1 | tee >>$outfile
+    cd $rosdir
+    ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/melodic  2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 08.2:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step09"
+fi
+#-----------------------------------
+if [ "$step" == "step09" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       Run setup.bash\n"        2>&1 | tee >>$outfile
+    cd $rosdir
+    source ./install_isolated/setup.bash    2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 09:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step10"
+fi
+#STEP09 errors were from pacakges already installed!
+#  source ./install_isolated/setup.bash    2>&1 | tee >>~/rosinstall.txt
+#-----------------------------------
+if [ "$step" == "step10" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       3.      Maintain a Source Checkout\n" 2>&1 | tee >>$outfile
+    printf "       3.1     Backup the workspace\n"       2>&1 | tee >>$outfile
+    cd $rosdir
+#    mv -i melodic-desktop-full.rosinstall melodic-desktop.rosinstall.old 2>&1 | tee >>$outfile
+    mv -i melodic-desktop.rosinstall melodic-desktop.rosinstall.old 2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 10.1:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    printf "       3.1.a     Update the workspace\n" 2>&1 | tee >>$outfile
+    cd $rosdir
+#    rosinstall_generator desktop_full --rosdistro melodic --deps --tar > melodic-desktop.rosinstall 2>&1 | tee >>$outfile
+    rosinstall_generator desktop --rosdistro melodic --deps --tar > melodic-desktop.rosinstall 2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 10.2:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step11"
+fi
+#   
+#    mv -i melodic-desktop.rosinstall melodic-desktop.rosinstall.old 2>&1 | tee >>~/rosinstall.txt
+#    rosinstall_generator desktop --rosdistro melodic --deps --tar > melodic-desktop.rosinstall 2>&1 | tee >>~/rosinstall.txt
+
+#-----------------------------------
+if [ "$step" == "step11" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       Diff from older version\n" 2>&1 | tee >>$outfile
+    cd $rosdir
+    diff -u melodic-desktop.rosinstall melodic-desktop.rosinstall.old 2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 11:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step12"
+fi
+#-----------------------------------
+if [ "$step" == "step12" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       incorporate the new rosinstall file into the workspace\n" 2>&1 | tee >>$outfile
+    cd $rosdir
+    wstool merge -t src melodic-desktop.rosinstall 2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 12.1:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    printf "       incorporate the new rosinstall file into the workspace\n" 2>&1 | tee >>$outfile
+    cd $rosdir
+    wstool update -t src                    2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 12.2:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step13"
+fi
+#-----------------------------------
+if [ "$step" == "step13" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       3.2     Rebuild your workspace\n" 2>&1 | tee >>$outfile
+    cd $rosdir
+    ./src/catkin/bin/catkin_make_isolated --install 2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 13:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+    step="step14"
+fi
+#-----------------------------------
+if [ "$step" == "step14" ]; then 
+    printf "$step \n"                       2>&1 | tee >>$outfile
+    printf "       Now, source the setup files again:\n" 2>&1 | tee >>$outfile
+    source $rosdir/ros_catkin_ws/install_isolated/setup.bash 2>&1 | tee >>$outfile
+    if [ $? -ne 0 ]; then
+       printf "       ERROR 14:  " $?          2>&1 | tee >>$outfile
+       exit 1
+    fi
+fi
+#-----------------------------------
+
+RIGHT_NOW=$(date +"%x %r %Z")
+printf "ROSINSTALL.sh END: $RIGHT_NOW \n"   2>&1 | tee >>$outfile
+

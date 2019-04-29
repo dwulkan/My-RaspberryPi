@@ -139,18 +139,21 @@ fi
 if [ "$step" == "step08" ]; then 
     printf "$step \n"                       2>&1 | tee >>$outfile
     printf "       2.1.2a   Building the Local catkin Workspace\n" 2>&1 | tee >>$outfile
-    if [ ! -d "~/rosdir" ]; then
-       mkdir ~/rosdir
+    if [ ! -d "~/ros" ]; then
+       mkdir ~/ros
     fi
-    cd ~/rosdir
-    $rosdir/src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release 2>&1 | tee >>$outfile
+    cd ~/ros
+    ~/ros/src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release 2>&1 | tee >>$outfile
     if [ $? -ne 0 ]; then
        printf "       ERROR 08.1:  " $?          2>&1 | tee >>$outfile
        exit 1
     fi
     printf "       2.1.2b   Building the Public catkin Workspace\n"2>&1 | tee >>$outfile
+    if [ ! -d "~/rosdir" ]; then
+       mkdir ~/rosdir
+    fi
     cd $rosdir
-    ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/melodic  2>&1 | tee >>$outfile
+    $rosdir/src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/melodic  2>&1 | tee >>$outfile
     if [ $? -ne 0 ]; then
        printf "       ERROR 08.2:  " $?          2>&1 | tee >>$outfile
        exit 1

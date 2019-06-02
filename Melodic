@@ -5,7 +5,7 @@
 # http://wiki.ros.org/melodic/Installation/Source
 
 # Script to save output to a text file for a post mortum.
-# Run:  rosinstall.sh step-name
+# Run:  rosinstall.sh step-name       (LC ex.  step03)
 #                     STEP01 thru STEP14  <- for restarts
 #
 # 

@@ -1,8 +1,8 @@
-## Welcome to GitHub Pages
+## Welcome to My Raspberry Pi Ros Melodic Odyssey Pages
 
-You can use the [editor on GitHub](https://github.com/dwulkan/My-RaspberryPi/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+I built this humanoid robot and started coding movements then decided that I should build within a standard framework in case someone wants to pick up whereever I stop.  I learned that to buildMelodic for Ubunut 18.04 on the Pi, you must build from scratch.  I created a script that can be restarted at each of the steps in the instructions.  It's on the page named Melodic.  Feel free to copy and use this.  I started to upload my rosinstall.txt output file so you could see what you get and maybe provide some help on problems I am encountering?
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+
 
 ### Markdown
 
